@@ -7,7 +7,7 @@ def get_price_day_tx(code, end_date='', count=10, frequency='1d'):     #日线�
     if end_date:  end_date=end_date.strftime('%Y-%m-%d') if isinstance(end_date,datetime.date) else end_date.split(' ')[0]
     end_date='' if end_date==datetime.datetime.now().strftime('%Y-%m-%d') else end_date   #如果日期今天就变成空    
     URL=f'http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={code},{unit},,{end_date},{count},qfq'     
-    st= json.loads(requests.get(URL).content);    ms='qfq'+unit;      stk=st['data'][code]   
+    st= json.loads(requests.get(URL, timeout=30).content);    ms='qfq'+unit;      stk=st['data'][code]
     buf=stk[ms] if ms in stk else stk[unit]       #指数返回不是qfqday,是day
     df=pd.DataFrame(buf,columns=['time','open','close','high','low','volume'],dtype='float')     
     df.time=pd.to_datetime(df.time);    df.set_index(['time'], inplace=True);   df.index.name=''          #处理索引 
@@ -18,7 +18,7 @@ def get_price_min_tx(code, end_date=None, count=10, frequency='1d'):    #分钟�
     ts=int(frequency[:-1]) if frequency[:-1].isdigit() else 1           #解析K线周期数
     if end_date: end_date=end_date.strftime('%Y-%m-%d') if isinstance(end_date,datetime.date) else end_date.split(' ')[0]        
     URL=f'http://ifzq.gtimg.cn/appstock/app/kline/mkline?param={code},m{ts},,{count}' 
-    st= json.loads(requests.get(URL).content);       buf=st['data'][code]['m'+str(ts)] 
+    st= json.loads(requests.get(URL, timeout=30).content);       buf=st['data'][code]['m'+str(ts)]
     df=pd.DataFrame(buf,columns=['time','open','close','high','low','volume','n1','n2'])   
     df=df[['time','open','close','high','low','volume']]    
     df[['open','close','high','low','volume']]=df[['open','close','high','low','volume']].astype('float')
@@ -37,7 +37,7 @@ def get_price_sina(code, end_date='', count=10, frequency='60m'):    #新浪全�
         count=count+(datetime.datetime.now()-end_date).days//unit            #结束时间到今天有多少天自然日(肯定 >交易日)        
         #print(code,end_date,count)    
     URL=f'http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={code}&scale={ts}&ma=5&datalen={count}' 
-    dstr= json.loads(requests.get(URL).content);       
+    dstr= json.loads(requests.get(URL, timeout=30).content);
     #df=pd.DataFrame(dstr,columns=['day','open','high','low','close','volume'],dtype='float') 
     df= pd.DataFrame(dstr,columns=['day','open','high','low','close','volume'])
     df['open'] = df['open'].astype(float); df['high'] = df['high'].astype(float);                          #转换数据类型
